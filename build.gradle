@@ -1,0 +1,214 @@
+buildscript {
+    repositories {
+        maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'org.spongepowered:mixingradle:0.7-SNAPSHOT'
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
+        classpath 'org.parchmentmc:librarian:1.+'
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.0'
+        classpath "org.jlleitschuh.gradle:ktlint-gradle:12.1.1"
+    }
+}
+
+plugins {
+    id "org.jetbrains.kotlin.jvm" version "1.9.22"
+
+    id 'eclipse'
+    id 'idea'
+    id 'net.minecraftforge.gradle' version '[6.0,6.2)'
+    id 'org.parchmentmc.librarian.forgegradle' version '1.+'
+}
+
+apply plugin: "org.jlleitschuh.gradle.ktlint"
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'maven-publish'
+apply plugin: 'org.spongepowered.mixin'
+apply plugin: 'org.parchmentmc.librarian.forgegradle'
+apply plugin: "org.jetbrains.kotlin.jvm"
+
+
+String gitRevision = "git rev-parse HEAD".execute().text.trim()
+if (gitRevision.length() >= 10) {
+    version = mod_version + '+' + gitRevision.substring(0, 10)
+} else {
+    version = mod_version + '+unknown'
+}
+
+
+base {
+    archivesName = mod_id
+}
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
+}
+
+minecraft {
+
+    mappings channel: 'parchment', version: '2023.09.03-1.20.1'
+
+    copyIdeResources = true
+    runs {
+        configureEach {
+            workingDirectory project.file('run')
+            property 'forge.logging.markers', 'REGISTRIES'
+
+            property 'forge.logging.console.level', 'info'
+
+            mods {
+                "${mod_id}" {
+                    source sourceSets.main
+                }
+            }
+        }
+
+        client {
+            property 'forge.enabledGameTestNamespaces', mod_id
+            jvmArgs '-Dforge.logging.markers=REGISTRIES'
+            property("mixin.env.refMapRemappingFile", "${projectDir}/build/createSrgToMcp/output.srg")
+        }
+
+        server {
+            property 'forge.enabledGameTestNamespaces', mod_id
+            args '--nogui'
+            jvmArgs '-Dforge.logging.markers=REGISTRIES'
+
+            property("mixin.env.refMapRemappingFile", "${projectDir}/build/createSrgToMcp/output.srg")
+        }
+
+        gameTestServer {
+            property 'forge.enabledGameTestNamespaces', mod_id
+
+            property("mixin.env.refMapRemappingFile", "${projectDir}/build/createSrgToMcp/output.srg")
+
+        }
+
+        data {
+            workingDirectory project.file('run-data')
+
+            args '--mod', mod_id, '--all', '--output', file('src/generated/resources/'), '--existing', file('src/main/resources/')
+
+            property("mixin.env.refMapRemappingFile", "${projectDir}/build/createSrgToMcp/output.srg")
+        }
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+repositories {
+    mavenCentral()
+
+    maven { url 'https://modmaven.dev/' }
+
+
+
+    maven {
+        url "https://cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
+
+    maven {
+        name = "ParchmentMC"
+        url = "https://maven.parchmentmc.org"
+    }
+
+    maven {
+        name = 'Kotlin for Forge'
+        url = 'https://thedarkcolour.github.io/KotlinForForge/'
+    }
+
+    maven {
+        name = "Valkyrien Skies Internal"
+        url = 'https://maven.valkyrienskies.org'
+    }
+    maven {
+        name = "Modrinth"
+        url = "https://api.modrinth.com/maven"
+    }
+
+
+    flatDir {
+        dir 'libs'
+    }
+
+    mavenLocal()
+
+    maven { url = "https://maven.createmod.net" } // Create, Ponder, Flywheel
+    maven { url = "https://maven.ithundxr.dev/mirror" } // Registrate
+    maven { url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/" } // ForgeConfigAPIPort
+    maven { url = "https://maven.blamejared.com" } // JEI
+
+    maven { url = "https://maven.bawnorton.com/releases" }
+    maven { url = "https://maven.enjarai.dev/mirrors" }
+
+    maven { url = "https://maven.bawnorton.com/releases" }
+
+}
+
+dependencies {
+    minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
+    implementation("org.valkyrienskies.core:api:${vs_core_version}")
+    implementation("org.valkyrienskies.core:impl:${vs_core_version}")
+    implementation("org.valkyrienskies.core:internal:${vs_core_version}")
+    implementation("org.valkyrienskies.core:util:${vs_core_version}")
+    implementation fg.deobf("org.valkyrienskies:valkyrienskies-120-forge:${vs2_version}+${vs2_hash.substring(0, 10)}")
+
+    implementation "org.joml:joml:1.10.5"
+    implementation "com.fasterxml.jackson.core:jackson-annotations:2.13.3"
+    implementation 'thedarkcolour:kotlinforforge:4.10.0'
+}
+
+configurations {
+    shade
+    implementation.extendsFrom shade
+    runtimeClasspath.extendsFrom runtimeOnly
+}
+
+minecraft.runs.all {
+    lazyToken('minecraft_classpath') {
+        configurations.shade.copyRecursive().resolve().collect { it.absolutePath }.join(File.pathSeparator)
+    }
+}
+
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [
+            minecraft_version: minecraft_version, forge_version: forge_version,
+            mod_id: mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
+            mod_authors: mod_authors, mod_description: mod_description, issue_tracker: issue_tracker,
+            homepage: homepage, vs2_version: vs2_version, vs2_min_version: vs2_min_version
+    ]
+
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    inputs.properties replaceProperties
+
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties + [project: project]
+    }}
+
+tasks.named('jar', Jar).configure {
+    manifest {
+        attributes([
+                "Specification-Title": mod_id,
+                "Specification-Vendor": mod_authors,
+                "Specification-Version": "1",
+                "Implementation-Title": project.name,
+                "Implementation-Version": project.jar.archiveVersion,
+                "Implementation-Vendor": mod_authors,
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+
+    //finalizedBy 'reobfJar'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
