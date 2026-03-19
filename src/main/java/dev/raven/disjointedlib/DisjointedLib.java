@@ -1,4 +1,4 @@
-package dev.wren.disjointedlib;
+package dev.raven.disjointedlib;
 
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.common.MinecraftForge;
