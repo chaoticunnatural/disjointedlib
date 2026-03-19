@@ -1,23 +1,45 @@
 package dev.raven.disjointedlib;
 
 import com.mojang.logging.LogUtils;
+import dev.raven.disjointedlib.infrastructure.DisjointedRegistry;
+import dev.raven.disjointedlib.infrastructure.JointPersistence;
+import dev.raven.disjointedlib.joints.DisjointedDistanceJoint;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
+import org.valkyrienskies.core.internal.joints.VSJointType;
+import org.valkyrienskies.mod.common.ValkyrienSkiesMod;
 
-// The value here should match an entry in the META-INF/mods.toml file
 @Mod(DisjointedLib.MODID)
 public class DisjointedLib {
     public static final String MODID = "disjointedlib";
-    private static final Logger LOGGER = LogUtils.getLogger();
+    public static final String NAME = "Disjointed Lib";
+    public static final Logger LOGGER = LogUtils.getLogger();
 
     public DisjointedLib(FMLJavaModLoadingContext context) {
         IEventBus modEventBus = context.getModEventBus();
 
         MinecraftForge.EVENT_BUS.register(this);
+
+        ValkyrienSkiesMod.getApi().getShipLoadEvent().on(JointPersistence::onShipLoad);
+
+        LOGGER.info("{} ({}) initialized!", NAME, MODID);
     }
 
+    public static void registerForTypes() { // maybe having classes and methods might be better instead of one registry to rule them all, but it's silly so im doing it
+        DisjointedRegistry.forJointType(VSJointType.DISTANCE,
+            DisjointedDistanceJoint::createFromTag,
+            joint -> {
+                CompoundTag tag = new CompoundTag();
+
+                tag.putString("jointType", VSJointType.DISTANCE.name());
+
+                return tag;
+            }
+        );
+    }
 
 }
