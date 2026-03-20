@@ -1,10 +1,7 @@
 package dev.raven.disjointedlib.joints;
 
 import dev.raven.disjointedlib.internal.DisjointedJoint;
-import dev.raven.disjointedlib.internal.utility.JointPosData;
-import dev.raven.disjointedlib.internal.utility.JointUtility;
-import dev.raven.disjointedlib.internal.utility.JointValues;
-import dev.raven.disjointedlib.internal.utility.ShipUtility;
+import dev.raven.disjointedlib.internal.utility.*;
 import kotlin.Pair;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -22,12 +19,12 @@ public class DisjointedDistanceJoint implements DisjointedJoint<VSDistanceJoint>
     private JointPosData posData0;
     private JointPosData posData1;
     private final JointUtility.ConnectionType connectionType;
-    private final JointValues<VSDistanceJoint> jointValues;
+    private final DistanceJointValues jointValues;
     private VSDistanceJoint joint;
     private Integer jointId;
     int restorationAttempts = 0;
 
-    private DisjointedDistanceJoint(Integer id, JointPosData posData0, JointPosData posData1, JointValues<VSDistanceJoint> jointValues) {
+    private DisjointedDistanceJoint(Integer id, JointPosData posData0, JointPosData posData1, DistanceJointValues jointValues) {
         this.id = id;
         this.posData0 = posData0;
         this.posData1 = posData1;
@@ -70,17 +67,6 @@ public class DisjointedDistanceJoint implements DisjointedJoint<VSDistanceJoint>
         return jointValues;
     }
 
-    @Override
-    public CompoundTag toTag() {
-        CompoundTag tag = new CompoundTag();
-
-        tag.putLong("ship0", posData0.getShipIdSafe());
-        tag.putLong("ship1", posData0.getShipIdSafe());
-        tag.put("blockPos0", NbtUtils.writeBlockPos(posData0.blockPos()));
-        tag.put("blockPos1", NbtUtils.writeBlockPos(posData1.blockPos()));
-
-        return tag;
-    }
 
     @Override
     public boolean checkIfRestore(Long shipId) {
@@ -108,14 +94,28 @@ public class DisjointedDistanceJoint implements DisjointedJoint<VSDistanceJoint>
         return new DisjointedDistanceJoint(id, posData0, posData1, new DistanceJointValues(length, new VSJointMaxForceTorque(maxForce, maxForce)));
     }
 
-    public static DisjointedDistanceJoint createFromTag(ServerLevel serverLevel, Integer id, CompoundTag tag) {
+    public static DisjointedDistanceJoint tagToJoint(ServerLevel serverLevel, Integer id, CompoundTag tag) {
         Pair<JointPosData, JointPosData> posDataPair = JointPosData.create(serverLevel, tag.getLong("ship0"), tag.getLong("ship1"), NbtUtils.readBlockPos(tag.getCompound("blockPos0")), NbtUtils.readBlockPos(tag.getCompound("blockPos1")));
         JointPosData posData0 = posDataPair.component1();
         JointPosData posData1 = posDataPair.component2();
 
-        JointValues<VSDistanceJoint> jointValues = new DistanceJointValues(tag);
+        DistanceJointValues jointValues = new DistanceJointValues(tag);
 
         return new DisjointedDistanceJoint(id, posData0, posData1, jointValues);
+    }
+
+
+    @Override
+    public CompoundTag toTag() {
+        CompoundTag tag = new CompoundTag();
+
+        tag.putString("jointType", VSJointType.DISTANCE.name());
+        tag.putLong("ship0", posData0.getShipIdSafe());
+        tag.putLong("ship1", posData1.getShipIdSafe());
+        tag.put("blockPos0", NbtUtils.writeBlockPos(posData0.blockPos()));
+        tag.put("blockPos1", NbtUtils.writeBlockPos(posData1.blockPos()));
+
+        return tag;
     }
 
     public static class DistanceJointValues extends JointValues<VSDistanceJoint> {

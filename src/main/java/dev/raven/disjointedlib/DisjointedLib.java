@@ -1,10 +1,8 @@
 package dev.raven.disjointedlib;
 
 import com.mojang.logging.LogUtils;
-import dev.raven.disjointedlib.infrastructure.DisjointedRegistry;
 import dev.raven.disjointedlib.infrastructure.JointPersistence;
 import dev.raven.disjointedlib.joints.DisjointedDistanceJoint;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
@@ -22,24 +20,12 @@ public class DisjointedLib {
     public DisjointedLib(FMLJavaModLoadingContext context) {
         IEventBus modEventBus = context.getModEventBus();
 
+        JointPersistence.registerConverter(VSJointType.DISTANCE, DisjointedDistanceJoint::tagToJoint);
+
         MinecraftForge.EVENT_BUS.register(this);
 
         ValkyrienSkiesMod.getApi().getShipLoadEvent().on(JointPersistence::onShipLoad);
 
         LOGGER.info("{} ({}) initialized!", NAME, MODID);
     }
-
-    public static void registerForTypes() { // maybe having classes and methods might be better instead of one registry to rule them all, but it's silly so im doing it
-        DisjointedRegistry.forJointType(VSJointType.DISTANCE,
-            DisjointedDistanceJoint::createFromTag,
-            joint -> {
-                CompoundTag tag = new CompoundTag();
-
-                tag.putString("jointType", VSJointType.DISTANCE.name());
-
-                return tag;
-            }
-        );
-    }
-
 }

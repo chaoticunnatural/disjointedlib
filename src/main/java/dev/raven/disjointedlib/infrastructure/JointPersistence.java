@@ -9,13 +9,16 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 import net.minecraft.world.level.storage.DimensionDataStorage;
+import org.apache.commons.lang3.function.TriFunction;
 import org.jetbrains.annotations.NotNull;
 import org.valkyrienskies.core.api.event.RegisteredListener;
 import org.valkyrienskies.core.api.events.ShipLoadEvent;
+import org.valkyrienskies.core.internal.joints.VSJoint;
 import org.valkyrienskies.core.internal.joints.VSJointType;
 import org.valkyrienskies.mod.common.VSGameUtilsKt;
 import org.valkyrienskies.mod.common.ValkyrienSkiesMod;
 
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,7 +42,8 @@ public class JointPersistence extends SavedData {
         for (Tag t : jointList) {
             CompoundTag jointTag = (CompoundTag) t;
             int nextId = JointManager.getNextId();
-            DisjointedJoint<?> joint = DisjointedRegistry.convert(VSJointType.valueOf(jointTag.getString("jointType")), serverLevel, nextId, jointTag);
+            VSJointType jointType = VSJointType.valueOf(jointTag.getString("jointType"));
+            DisjointedJoint<?> joint = convert(jointType, serverLevel, nextId, jointTag);
 
             data.joints.put(nextId, joint);
 
@@ -54,7 +58,7 @@ public class JointPersistence extends SavedData {
     public @NotNull CompoundTag save(@NotNull CompoundTag tag) {
         ListTag jointList = new ListTag();
         for (Map.Entry<Integer, DisjointedJoint<?>> entry : joints.entrySet()) {
-            jointList.add(DisjointedRegistry.convert(entry.getValue()));
+            jointList.add(entry.getValue().toTag());
         }
         tag.put("joints", jointList);
         return tag;
@@ -93,4 +97,14 @@ public class JointPersistence extends SavedData {
 
     }
 
+    private static final EnumMap<VSJointType, TriFunction<ServerLevel, Integer, CompoundTag, ? extends DisjointedJoint<? extends VSJoint>>> functionMap = new EnumMap<>(VSJointType.class);
+
+    public static void registerConverter(VSJointType jointType, TriFunction<ServerLevel, Integer, CompoundTag, ? extends DisjointedJoint<? extends VSJoint>> function) {
+        functionMap.put(jointType, function);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <J extends DisjointedJoint<? extends VSJoint>> J convert(VSJointType jointType, ServerLevel serverLevel, Integer id, CompoundTag tag) {
+        return (J) functionMap.get(jointType).apply(serverLevel, id, tag);
+    }
 }
