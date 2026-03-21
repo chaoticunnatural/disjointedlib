@@ -1,4 +1,4 @@
-package dev.raven.disjointedlib.joints;
+package dev.raven.disjointedlib.impl.joints;
 
 import dev.raven.disjointedlib.internal.DisjointedJoint;
 import dev.raven.disjointedlib.internal.utility.*;
@@ -116,6 +116,11 @@ public class DisjointedDistanceJoint implements DisjointedJoint<VSDistanceJoint>
         tag.put("blockPos1", NbtUtils.writeBlockPos(posData1.blockPos()));
 
         return tag;
+    }
+
+    @Override
+    public boolean isAtPos(BlockPos pos) {
+        return this.posData0.blockPos() == pos || this.posData1.blockPos() == pos;
     }
 
     public static class DistanceJointValues extends JointValues<VSDistanceJoint> {

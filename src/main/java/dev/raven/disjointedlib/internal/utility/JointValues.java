@@ -2,14 +2,11 @@ package dev.raven.disjointedlib.internal.utility;
 
 import dev.raven.disjointedlib.DisjointedLib;
 import net.minecraft.nbt.CompoundTag;
-import org.valkyrienskies.core.impl.shadow.FL;
 import org.valkyrienskies.core.internal.joints.VSJoint;
 import org.valkyrienskies.core.internal.joints.VSJointMaxForceTorque;
-import org.valkyrienskies.physics_api.joints.MaxForceTorque;
 
 import java.util.EnumMap;
 import java.util.List;
-import java.util.Map;
 
 public abstract class JointValues<J extends VSJoint> extends EnumMap<JointUtility.JointValue, Object> {
     public JointValues() {

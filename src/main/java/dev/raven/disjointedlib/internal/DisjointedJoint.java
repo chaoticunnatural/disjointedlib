@@ -1,6 +1,7 @@
 package dev.raven.disjointedlib.internal;
 
 import dev.raven.disjointedlib.internal.utility.JointValues;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import org.valkyrienskies.core.internal.joints.VSJoint;
@@ -23,6 +24,8 @@ public interface DisjointedJoint<J extends VSJoint> {
     JointValues<J> getJointValues();
 
     CompoundTag toTag();
+
+    boolean isAtPos(BlockPos pos);
 
     boolean checkIfRestore(Long shipId);
 

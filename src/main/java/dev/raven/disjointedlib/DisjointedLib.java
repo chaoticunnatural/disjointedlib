@@ -1,11 +1,13 @@
 package dev.raven.disjointedlib;
 
 import com.mojang.logging.LogUtils;
-import dev.raven.disjointedlib.infrastructure.JointPersistence;
-import dev.raven.disjointedlib.joints.DisjointedDistanceJoint;
+import dev.raven.disjointedlib.impl.DisjointedItems;
+import dev.raven.disjointedlib.infrastructure.JointManager;
+import dev.raven.disjointedlib.impl.joints.DisjointedDistanceJoint;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.slf4j.Logger;
 import org.valkyrienskies.core.internal.joints.VSJointType;
@@ -20,12 +22,20 @@ public class DisjointedLib {
     public DisjointedLib(FMLJavaModLoadingContext context) {
         IEventBus modEventBus = context.getModEventBus();
 
-        JointPersistence.registerConverter(VSJointType.DISTANCE, DisjointedDistanceJoint::tagToJoint);
+        JointManager.registerConverter(VSJointType.DISTANCE, DisjointedDistanceJoint::tagToJoint);
+
+        DisjointedItems.register(modEventBus);
 
         MinecraftForge.EVENT_BUS.register(this);
 
-        ValkyrienSkiesMod.getApi().getShipLoadEvent().on(JointPersistence::onShipLoad);
+        modEventBus.addListener(this::common);
+
+        ValkyrienSkiesMod.getApi().getShipLoadEvent().on(JointManager::onShipLoad);
 
         LOGGER.info("{} ({}) initialized!", NAME, MODID);
+    }
+
+    private void common(final FMLCommonSetupEvent event) {
+        LOGGER.info("removing your joints..."); // muahahaha
     }
 }

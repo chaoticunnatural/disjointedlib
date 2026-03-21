@@ -3,7 +3,6 @@ package dev.raven.disjointedlib.internal.utility;
 import dev.raven.disjointedlib.DisjointedLib;
 import kotlin.Pair;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3d;
